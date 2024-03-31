@@ -62,15 +62,24 @@ namespace ArchiveCacheManager
 
         public override bool Extract(string archivePath, string cachePath, string[] includeList = null, string[] excludeList = null)
         {
+            // Step 1: Copy the archive to the cache
+            string copiedArchivePath = Path.Combine(cachePath, Path.GetFileName(archivePath));
+            File.Copy(archivePath, copiedArchivePath, true);
+
+            // Step 2: Extract the copied archive in the cache
             // x = extract
             // {0} = archive path
             // -o{1} = output path
             // -y = answer yes to any queries
             // -aoa = overwrite all existing files
             // -bsp1 = redirect progress to stdout
-            string args = string.Format("x \"{0}\" \"-o{1}\" -y -aoa -bsp1 {2}", archivePath, cachePath, GetIncludeExcludeArgs(includeList, excludeList, false));
+            string args = string.Format("x \"{0}\" \"-o{1}\" -y -aoa -bsp1 {2}", copiedArchivePath, cachePath, GetIncludeExcludeArgs(includeList, excludeList, false));
 
             var (_, _, exitCode) = Run7z(args, true);
+
+            // Step 3: Delete the copied archive
+            File.Delete(copiedArchivePath);
+
             return exitCode == 0;
         }
 
