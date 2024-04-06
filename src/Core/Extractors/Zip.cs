@@ -60,28 +60,27 @@ namespace ArchiveCacheManager
             return 0;
         }
 
-        public override bool Extract(string archivePath, string cachePath, string[] includeList = null, string[] excludeList = null)
-        {
-            // Step 1: Copy the archive to the cache
-            string copiedArchivePath = Path.Combine(cachePath, Path.GetFileName(archivePath));
-            File.Copy(archivePath, copiedArchivePath, true);
+          public override bool Extract(string archivePath, string cachePath, string[] includeList = null, string[] excludeList = null)
+{
+    // Step 1: Copy the archive to the cache using Robocopy
+    string copiedArchivePath = Path.Combine(cachePath, Path.GetFileName(archivePath));
+    Robocopy robocopy = new Robocopy();
+    bool copySuccess = robocopy.Extract(archivePath, cachePath);
 
-            // Step 2: Extract the copied archive in the cache
-            // x = extract
-            // {0} = archive path
-            // -o{1} = output path
-            // -y = answer yes to any queries
-            // -aoa = overwrite all existing files
-            // -bsp1 = redirect progress to stdout
-            string args = string.Format("x \"{0}\" \"-o{1}\" -y -aoa -bsp1 {2}", copiedArchivePath, cachePath, GetIncludeExcludeArgs(includeList, excludeList, false));
+    if (!copySuccess)
+    {
+        return false;
+    }
 
-            var (_, _, exitCode) = Run7z(args, true);
+    // Step 2: Extract the copied archive in the cache
+    string args = string.Format("x \"{0}\" \"-o{1}\" -y -aoa -bsp1 {2}", copiedArchivePath, cachePath, GetIncludeExcludeArgs(includeList, excludeList, false));
+    var (_, _, exitCode) = Run7z(args, true);
 
-            // Step 3: Delete the copied archive
-            File.Delete(copiedArchivePath);
+    // Step 3: Delete the copied archive
+    File.Delete(copiedArchivePath);
 
-            return exitCode == 0;
-        }
+    return exitCode == 0;
+}
 
         public override string[] List(string archivePath)
         {
